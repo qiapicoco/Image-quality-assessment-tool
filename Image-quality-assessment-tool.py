@@ -1,17 +1,15 @@
+# main.py
 import tkinter as tk
 from tkinter import filedialog
 from PIL import Image, ImageTk
 import cv2
 import numpy as np
 import rawpy
+from math import gcd
+from resolution_info import resolution_info
 
 
 def read_image(file_path):
-    """
-    读取图片文件，支持 RAW 格式和常见图片格式。
-    :param file_path: 图片文件路径
-    :return: 读取成功返回 PIL 图像对象，失败返回 None
-    """
     import os
     file_extension = os.path.splitext(file_path)[1].lower()
     try:
@@ -26,97 +24,47 @@ def read_image(file_path):
 
 
 def preprocess_image(image, target_size=(512, 512)):
-    """
-    预处理图片，转换为 RGB 格式并调整大小。
-    :param image: PIL 图像对象
-    :param target_size: 目标大小，默认为 (512, 512)
-    :return: 处理后的 PIL 图像对象
-    """
     return image.convert('RGB').resize(target_size, Image.LANCZOS)
 
 
 def evaluate_sharpness(image):
-    """
-    评估图片清晰度，使用拉普拉斯算法。
-    :param image: PIL 图像对象
-    :return: 清晰度值（拉普拉斯算子方差）
-    """
     img = np.array(image)
     img_gray = cv2.cvtColor(img, cv2.COLOR_RGB2GRAY)
     return cv2.Laplacian(img_gray, cv2.CV_64F).var()
 
 
 def evaluate_brightness_contrast(image):
-    """
-    评估图片亮度和对比度。
-    :param image: PIL 图像对象
-    :return: 亮度值和对比度值（标准差）
-    """
     img = np.array(image)
     gray = cv2.cvtColor(img, cv2.COLOR_RGB2GRAY)
     return np.mean(gray), np.std(gray)
 
 
 def get_image_resolution(image):
-    """
-    获取图片分辨率和分辨率标准。
-    :param image: PIL 图像对象
-    :return: 分辨率字符串、宽度、高度和分辨率标准
-    """
     width, height = image.size
     resolution = f"{width}x{height}"
     resolution_standard = ""
-    resolutions = [
-        (7680, 4320, "8K"),
-        (3840, 2160, "4K"),
-        (2048, 1080, "2K"),
-        (1920, 1080, "1080p"),
-        (1280, 720, "720p")
-    ]
-    for w, h, std in resolutions:
-        if width >= w and height >= h:
-            resolution_standard = std
+    for std, ratios in resolution_info.items():
+        for ratio, res in ratios.items():
+            w, h = map(int, res.split('x'))
+            if width == w and height == h:
+                resolution_standard = std
+                break
+        if resolution_standard:
             break
     return resolution, width, height, resolution_standard
 
 
 def get_image_composition(width, height):
-    """
-    根据图片宽高判断构图类型。
-    :param width: 图片宽度
-    :param height: 图片高度
-    :return: 构图类型字符串
-    """
     if width == height:
         return "方图"
     return "横图" if width > height else "竖图"
 
 
 def get_file_format(file_path):
-    """
-    获取图片文件格式。
-    :param file_path: 图片文件路径
-    :return: 文件格式字符串
-    """
     format_mapping = {
-        ".bmp": "BMP",
-        ".jpg": "JPG",
-        ".jpeg": "JPG",
-        ".png": "PNG",
-        ".tif": "TIF",
-        ".tiff": "TIF",
-        ".gif": "GIF",
-        ".pcx": "PCX",
-        ".tga": "TGA",
-        ".exif": "EXIF",
-        ".fpx": "FPX",
-        ".svg": "SVG",
-        ".psd": "PSD",
-        ".pcd": "PCD",
-        ".webp": "WEBP",
-        ".avif": "AVIF",
-        ".apng": "APNG",
-        ".raw": "RAW"
+        ".bmp": "BMP", ".jpg": "JPG", ".jpeg": "JPG", ".png": "PNG", ".tif": "TIF", ".tiff": "TIF",
+        ".gif": "GIF", ".pcx": "PCX", ".tga": "TGA", ".exif": "EXIF", ".fpx": "FPX", ".svg": "SVG",
+        ".psd": "PSD", ".pcd": "PCD", ".webp": "WEBP", ".avif": "AVIF", ".apng": "APNG", ".raw": "RAW"
     }
     import os
     file_extension = os.path.splitext(file_path)[1].lower()
@@ -124,20 +72,25 @@ def get_file_format(file_path):
 
 
 def get_image_quality_level(sharpness):
-    """
-    根据清晰度评估图片质量等级。
-    :param sharpness: 清晰度值
-    :return: 图片质量等级字符串
-    """
     if sharpness > 100:
         return "高"
     return "中" if sharpness > 50 else "低"
 
 
+def get_aspect_ratio(width, height):
+    for std, ratios in resolution_info.items():
+        for ratio_str, res in ratios.items():
+            w, h = map(int, res.split('x'))
+            if width == w and height == h:
+                ratio_parts = ratio_str.split('(')[-1].split(')')[0]
+                return ratio_parts
+    common_divisor = gcd(width, height)
+    simple_width = width // common_divisor
+    simple_height = height // common_divisor
+    return f"{simple_width}:{simple_height}"
+
+
 def select_image():
-    """
-    选择图片文件并进行评估，更新界面显示结果。
-    """
     supported_formats = [
         ("所有支持的图片格式",
          "*.bmp;*.jpg;*.jpeg;*.png;*.tif;*.tiff;*.gif;*.pcx;*.tga;*.exif;*.fpx;*.svg;*.psd;*.pcd;*.webp;*.avif;*.apng;*.raw"),
@@ -170,10 +123,7 @@ def select_image():
             file_format = get_file_format(file_path)
             quality_level = get_image_quality_level(sharpness)
 
-            # 计算宽高比
-            from math import gcd
-            common_divisor = gcd(width, height)
-            aspect_ratio = f"{width // common_divisor}:{height // common_divisor}"
+            aspect_ratio = get_aspect_ratio(width, height)
 
             img = image.copy()
             img.thumbnail((400, 400))
@@ -183,7 +133,7 @@ def select_image():
 
             result_text = f"图片读取成功：\n"
             result_text += f"清晰度: {sharpness:.2f}（无特定单位）\n"
-            result_text += f"亮 度: {brightness:.2f}（灰度值范围 0-255）\n"
+            result_text += f"亮 度: {brightness:.2f}（灰度值范围 0~255）\n"
             result_text += f"对比度: {contrast:.2f}（标准差）\n"
             result_text += f"分辨率: {resolution}px（{resolution_standard}）\n"
             result_text += f"宽 度: {width}px\n"
@@ -204,10 +154,6 @@ def select_image():
 
 
 def show_result(text):
-    """
-    在结果文本框中显示指定文本。
-    :param text: 要显示的文本
-    """
     result_text_widget.config(state=tk.NORMAL)
     result_text_widget.delete(1.0, tk.END)
     result_text_widget.insert(tk.END, text)
@@ -275,7 +221,7 @@ info_text = [
     "分辨率：图像水平和垂直像素数，格式为“宽x高”。",
     "宽 度：图像水平方向像素数量。",
     "高 度：图像垂直方向像素数量。",
-    "宽高比：图片宽度与高度的最简整数比。",
+    "宽高比：优先使用分辨率信息字典里的宽高比，无匹配则化简到最简。",
     "构 图：据宽高关系判断横、竖、方图。",
     "文件格式：识别图像文件格式。",
     "图片质量等级：依清晰度等指标分高、中、低等级。"
