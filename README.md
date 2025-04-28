@@ -58,7 +58,7 @@ python Image-quality-assessment-tool.py
 
 <span style="font-size:1.8em; font-weight:bold; letter-spacing:2pt; background:#CCCC00;">传统方式</span>
 
-
+- 运行exe文件
 
 
 
