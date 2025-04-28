@@ -7,73 +7,97 @@ import rawpy
 
 
 def read_image(file_path):
+    """
+    读取图片文件，支持 RAW 格式和常见图片格式。
+    :param file_path: 图片文件路径
+    :return: 读取成功返回 PIL 图像对象，失败返回 None
+    """
     import os
     file_extension = os.path.splitext(file_path)[1].lower()
     try:
         if file_extension == '.raw':
             with rawpy.imread(file_path) as raw:
                 rgb = raw.postprocess()
-                image = Image.fromarray(rgb)
-                return image
-        else:
-            image = Image.open(file_path)
-            return image
+                return Image.fromarray(rgb)
+        return Image.open(file_path)
     except Exception as e:
         print(f"读取图片时出错: {e}")
         return None
 
 
 def preprocess_image(image, target_size=(512, 512)):
-    image = image.convert('RGB')
-    image = image.resize(target_size, Image.LANCZOS)
-    return image
+    """
+    预处理图片，转换为 RGB 格式并调整大小。
+    :param image: PIL 图像对象
+    :param target_size: 目标大小，默认为 (512, 512)
+    :return: 处理后的 PIL 图像对象
+    """
+    return image.convert('RGB').resize(target_size, Image.LANCZOS)
 
 
 def evaluate_sharpness(image):
+    """
+    评估图片清晰度，使用拉普拉斯算法。
+    :param image: PIL 图像对象
+    :return: 清晰度值（拉普拉斯算子方差）
+    """
     img = np.array(image)
     img_gray = cv2.cvtColor(img, cv2.COLOR_RGB2GRAY)
-    laplacian_var = cv2.Laplacian(img_gray, cv2.CV_64F).var()
-    return laplacian_var
+    return cv2.Laplacian(img_gray, cv2.CV_64F).var()
 
 
 def evaluate_brightness_contrast(image):
+    """
+    评估图片亮度和对比度。
+    :param image: PIL 图像对象
+    :return: 亮度值和对比度值（标准差）
+    """
     img = np.array(image)
     gray = cv2.cvtColor(img, cv2.COLOR_RGB2GRAY)
-    brightness = np.mean(gray)
-    contrast = np.std(gray)
-    return brightness, contrast
+    return np.mean(gray), np.std(gray)
 
 
 def get_image_resolution(image):
+    """
+    获取图片分辨率和分辨率标准。
+    :param image: PIL 图像对象
+    :return: 分辨率字符串、宽度、高度和分辨率标准
+    """
     width, height = image.size
     resolution = f"{width}x{height}"
     resolution_standard = ""
-    # 按照从低到高的顺序判断分辨率
-    if width >= 7680 or height >= 4320:
-        resolution_standard = "8K"
-    elif width >= 3840 or height >= 2160:
-        resolution_standard = "4K"
-    elif width >= 2560 or height >= 1440:
-        resolution_standard = "2K"
-    elif width >= 1920 or height >= 1080:
-        resolution_standard = "1080P"
-    elif width >= 1280 or height >= 720:
-        resolution_standard = "720P"
-
+    resolutions = [
+        (7680, 4320, "8K"),
+        (3840, 2160, "4K"),
+        (2560, 1440, "2K"),
+        (1920, 1080, "1080P"),
+        (1280, 720, "720P")
+    ]
+    for w, h, std in resolutions:
+        if width >= w or height >= h:
+            resolution_standard = std
+            break
     return resolution, width, height, resolution_standard
 
 
 def get_image_composition(width, height):
+    """
+    根据图片宽高判断构图类型。
+    :param width: 图片宽度
+    :param height: 图片高度
+    :return: 构图类型字符串
+    """
     if width == height:
         return "方图"
-    elif width > height:
-        return "横图"
-    elif width < height:
-        return "竖图"
-    return "未知构图"
+    return "横图" if width > height else "竖图"
 
 
 def get_file_format(file_path):
+    """
+    获取图片文件格式。
+    :param file_path: 图片文件路径
+    :return: 文件格式字符串
+    """
     format_mapping = {
         ".bmp": "BMP",
         ".jpg": "JPG",
@@ -99,17 +123,21 @@ def get_file_format(file_path):
     return format_mapping.get(file_extension, "未知格式")
 
 
-def get_image_quality_level(sharpness, brightness, contrast):
+def get_image_quality_level(sharpness):
+    """
+    根据清晰度评估图片质量等级。
+    :param sharpness: 清晰度值
+    :return: 图片质量等级字符串
+    """
     if sharpness > 100:
         return "高"
-    elif sharpness > 50:
-        return "中"
-    else:
-        return "低"
+    return "中" if sharpness > 50 else "低"
 
 
 def select_image():
-    # 定义支持的图片格式
+    """
+    选择图片文件并进行评估，更新界面显示结果。
+    """
     supported_formats = [
         ("所有支持的图片格式",
          "*.bmp;*.jpg;*.jpeg;*.png;*.tif;*.tiff;*.gif;*.pcx;*.tga;*.exif;*.fpx;*.svg;*.psd;*.pcd;*.webp;*.avif;*.apng;*.raw"),
@@ -134,15 +162,15 @@ def select_image():
     if file_path:
         image = read_image(file_path)
         if image:
-            img = image
             processed_image = preprocess_image(image)
             sharpness = evaluate_sharpness(processed_image)
             brightness, contrast = evaluate_brightness_contrast(processed_image)
             resolution, width, height, resolution_standard = get_image_resolution(image)
             composition = get_image_composition(width, height)
             file_format = get_file_format(file_path)
-            quality_level = get_image_quality_level(sharpness, brightness, contrast)
+            quality_level = get_image_quality_level(sharpness)
 
+            img = image.copy()
             img.thumbnail((400, 400))
             img_tk = ImageTk.PhotoImage(img)
             image_label.config(image=img_tk)
@@ -164,17 +192,20 @@ def select_image():
             result_text_widget.insert(tk.END, result_text)
             result_text_widget.config(state=tk.DISABLED)
         else:
-            result_text = "图片读取失败，无法进行后续评估"
-            result_text_widget.config(state=tk.NORMAL)
-            result_text_widget.delete(1.0, tk.END)
-            result_text_widget.insert(tk.END, result_text)
-            result_text_widget.config(state=tk.DISABLED)
+            show_result("图片读取失败，无法进行后续评估")
     else:
-        result_text = "未选择文件路径"
-        result_text_widget.config(state=tk.NORMAL)
-        result_text_widget.delete(1.0, tk.END)
-        result_text_widget.insert(tk.END, result_text)
-        result_text_widget.config(state=tk.DISABLED)
+        show_result("未选择文件路径")
+
+
+def show_result(text):
+    """
+    在结果文本框中显示指定文本。
+    :param text: 要显示的文本
+    """
+    result_text_widget.config(state=tk.NORMAL)
+    result_text_widget.delete(1.0, tk.END)
+    result_text_widget.insert(tk.END, text)
+    result_text_widget.config(state=tk.DISABLED)
 
 
 # 创建主窗口
