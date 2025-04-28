@@ -79,7 +79,6 @@ def get_image_resolution(image):
             break
     return resolution, width, height, resolution_standard
 
-
 def get_image_composition(width, height):
     """
     根据图片宽高判断构图类型。
