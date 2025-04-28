@@ -8,6 +8,15 @@ import rawpy
 from math import gcd
 from resolution_info import resolution_info
 
+# 新增的分辨率判断数据
+additional_resolutions = [
+    (7680, 4320, "8K"),
+    (3840, 2160, "4K"),
+    (2048, 1080, "2K"),
+    (1920, 1080, "1080p"),
+    (1280, 720, "720p")
+]
+
 
 def read_image(file_path):
     import os
@@ -41,8 +50,10 @@ def evaluate_brightness_contrast(image):
 
 def get_image_resolution(image):
     width, height = image.size
-    resolution = f"{width}x{height}"
+    resolution = f"{width}×{height}"
     resolution_standard = ""
+
+    # 先在 resolution_info 字典中查找
     for std, ratios in resolution_info.items():
         for ratio, res in ratios.items():
             w, h = map(int, res.split('x'))
@@ -51,6 +62,14 @@ def get_image_resolution(image):
                 break
         if resolution_standard:
             break
+
+    # 如果在字典中未找到，使用 additional_resolutions 查找
+    if not resolution_standard:
+        for w, h, std in additional_resolutions:
+            if width == w and height == h:
+                resolution_standard = std
+                break
+
     return resolution, width, height, resolution_standard
 
 
@@ -63,8 +82,8 @@ def get_image_composition(width, height):
 def get_file_format(file_path):
     format_mapping = {
         ".bmp": "BMP", ".jpg": "JPG", ".jpeg": "JPG", ".png": "PNG", ".tif": "TIF", ".tiff": "TIF",
-        ".gif": "GIF", ".pcx": "PCX", ".tga": "TGA", ".exif": "EXIF", ".fpx": "FPX", ".svg": "SVG",
-        ".psd": "PSD", ".pcd": "PCD", ".webp": "WEBP", ".avif": "AVIF", ".apng": "APNG", ".raw": "RAW"
+        ".gif": "GIF", ".pcx": "PCX", ".tga": "TGA", ".svg": "SVG",
+        ".psd": "PSD", ".webp": "WEBP", ".avif": "AVIF", ".apng": "APNG", ".raw": "RAW"
     }
     import os
     file_extension = os.path.splitext(file_path)[1].lower()
@@ -93,7 +112,7 @@ def get_aspect_ratio(width, height):
 def select_image():
     supported_formats = [
         ("所有支持的图片格式",
-         "*.bmp;*.jpg;*.jpeg;*.png;*.tif;*.tiff;*.gif;*.pcx;*.tga;*.exif;*.fpx;*.svg;*.psd;*.pcd;*.webp;*.avif;*.apng;*.raw"),
+         "*.bmp;*.jpg;*.jpeg;*.png;*.tif;*.tiff;*.gif;*.pcx;*.tga;*.svg;*.psd;*.webp;*.avif;*.apng;*.raw"),
         ("BMP 图片", "*.bmp"),
         ("JPEG 图片", "*.jpg;*.jpeg"),
         ("PNG 图片", "*.png"),
@@ -101,11 +120,8 @@ def select_image():
         ("GIF 图片", "*.gif"),
         ("PCX 图片", "*.pcx"),
         ("TGA 图片", "*.tga"),
-        ("EXIF 图片", "*.exif"),
-        ("FPX 图片", "*.fpx"),
         ("SVG 图片", "*.svg"),
         ("PSD 图片", "*.psd"),
-        ("PCD 图片", "*.pcd"),
         ("WebP 图片", "*.webp"),
         ("AVIF 图片", "*.avif"),
         ("APNG 图片", "*.apng"),
@@ -131,15 +147,15 @@ def select_image():
             image_label.config(image=img_tk)
             image_label.image = img_tk
 
-            result_text = f"图片读取成功：\n"
-            result_text += f"清晰度: {sharpness:.2f}（无特定单位）\n"
-            result_text += f"亮 度: {brightness:.2f}（灰度值范围 0~255）\n"
-            result_text += f"对比度: {contrast:.2f}（标准差）\n"
-            result_text += f"分辨率: {resolution}px（{resolution_standard}）\n"
-            result_text += f"宽 度: {width}px\n"
-            result_text += f"高 度: {height}px\n"
+            result_text = f"图片读取成功......\n"
+            result_text += f"清晰度: {sharpness:.2f}\n"
+            result_text += f"亮  度: {brightness:.2f}\n"
+            result_text += f"对比度: {contrast:.2f}\n"
+            result_text += f"分辨率: {resolution} px {resolution_standard}\n"
+            result_text += f"宽  度: {width} px\n"
+            result_text += f"高  度: {height} px\n"
             result_text += f"宽高比: {aspect_ratio}\n"
-            result_text += f"构 图: {composition}\n"
+            result_text += f"构  图: {composition}\n"
             result_text += f"文件格式: {file_format}\n"
             result_text += f"图片质量等级: {quality_level}"
 
@@ -148,9 +164,9 @@ def select_image():
             result_text_widget.insert(tk.END, result_text)
             result_text_widget.config(state=tk.DISABLED)
         else:
-            show_result("图片读取失败，无法进行后续评估")
+            show_result("图片读取失败，无法进行后续评估......")
     else:
-        show_result("未选择文件路径")
+        show_result("未选择文件路径......")
 
 
 def show_result(text):
@@ -162,10 +178,10 @@ def show_result(text):
 
 # 创建主窗口
 root = tk.Tk()
-root.title("图片质量评估工具")
+root.title("图片质量评估工具[仅供参考]")
 # 设置窗口大小并居中
-window_width = 1000
-window_height = 600
+window_width = 1138
+window_height = 635
 screen_width = root.winfo_screenwidth()
 screen_height = root.winfo_screenheight()
 x = (screen_width / 2) - (window_width / 2)
@@ -173,25 +189,30 @@ y = (screen_height / 2) - (window_height / 2)
 root.geometry(f"{window_width}x{window_height}+{int(x)}+{int(y)}")
 # 设置窗口背景颜色
 root.configure(bg='#ffffff')
-
+# 禁止窗口最大化
+root.resizable(width=False, height=False)
 # 创建选择图片按钮
-select_button = tk.Button(root, text="选择图片", command=select_image,
-                          font=("宋体", 13, 'bold'), bg='#007acc', fg='white', padx=10, pady=5)
-select_button.grid(row=0, column=0, columnspan=3, pady=10)
+select_button = tk.Button(root, text="选择图片", command=select_image,font=("宋体", 13, 'bold'), bg='#007acc', fg='white', padx=10, pady=5)
+select_button.grid(row=0, column=0, columnspan=1, pady=10)
+
+# 创建选择标签
+label = tk.Label(root, text="评估结果和说明",font=("宋体", 13, 'bold'), bg='#6A5ACD', fg='white', padx=10, pady=5)
+label.grid(row=0, column=2, columnspan=10, pady=(20,10))
 
 # 创建左边框架（图片显示区域）
 left_frame = tk.Frame(root, bg='#ffffff')
-left_frame.grid(row=1, column=0, padx=10, pady=10)
+left_frame.grid(row=1, column=0, padx=10, pady=35)
 
 # 创建显示图片的框架，固定大小
-image_frame = tk.Frame(left_frame, bg='#ffffff', width=485, height=485)
+image_frame = tk.Frame(left_frame, bg='#ffffff', width=500, height=500)
 image_frame.pack_propagate(0)
-image_frame.pack(pady=10)
+image_frame.pack(pady=20)
 image_label = tk.Label(image_frame, bg='#ffffff')
 image_label.pack()
 
 # 创建分隔线
-separator = tk.Frame(root, bg='black', width=2, height=window_height - 100)
+separator = tk.Frame(root, bg='red', width=1, height=window_height - 100)
+# 增加分隔线的 padx 值，使其向右移动
 separator.grid(row=1, column=1, sticky="ns")
 
 # 创建右边框架（包含结果显示区域和指标说明区域）
@@ -205,20 +226,21 @@ result_frame.grid_propagate(False)
 result_frame.config(width=300, height=200)
 scrollbar = tk.Scrollbar(result_frame)
 scrollbar.pack(side=tk.RIGHT, fill=tk.Y)
-result_text_widget = tk.Text(result_frame, bg='#ffffff', font=("宋体", 13, 'bold'), yscrollcommand=scrollbar.set,
-                             height=12, width=40, spacing2=8)
+result_text_widget = tk.Text(result_frame, bg='#ffffff', font=("微软雅黑", 13), yscrollcommand=scrollbar.set,
+                             height=12, width=50, spacing2=8)
 result_text_widget.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
 result_text_widget.config(state=tk.DISABLED)
 scrollbar.config(command=result_text_widget.yview)
 
 # 创建显示指标说明的框架
 info_frame = tk.Frame(right_frame, bg='#ffffff')
-info_frame.pack(pady=10)
+info_frame.pack(padx=10,pady=10)
 info_text = [
-    "清晰度：拉普拉斯算法算灰度二阶导数，方差大则边缘和细节丰富。",
-    "亮 度：彩色图转灰度图，算像素灰度平均值衡量整体亮度。",
+    "参数说明:",
+    "清晰度：拉普拉斯算法算灰度二阶导数，方差大则边缘和细节丰富。（无特定单位）",
+    "亮 度：彩色图转灰度图，算像素灰度平均值衡量整体亮度。（灰度值范围0~255）",
     "对比度：算灰度图像素灰度标准差，标准差大则对比度高。",
-    "分辨率：图像水平和垂直像素数，格式为“宽x高”。",
+    "分辨率：图像水平和垂直像素数，格式为“宽×高”。",
     "宽 度：图像水平方向像素数量。",
     "高 度：图像垂直方向像素数量。",
     "宽高比：优先使用分辨率信息字典里的宽高比，无匹配则化简到最简。",
