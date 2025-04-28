@@ -64,20 +64,21 @@ def get_image_resolution(image):
     :return: 分辨率字符串、宽度、高度和分辨率标准
     """
     width, height = image.size
-    resolution = f"{width}x{height}"
+    resolution = f"{width}×{height}"
     resolution_standard = ""
     resolutions = [
         (7680, 4320, "8K"),
         (3840, 2160, "4K"),
-        (2560, 1440, "2K"),
-        (1920, 1080, "1080P"),
-        (1280, 720, "720P")
+        (2048, 1080, "2K"),  # 假设常见的 2K 为 2048×1080，可根据实际情况调整
+        (1920, 1080, "1080p"),
+        (1280, 720, "720p")
     ]
     for w, h, std in resolutions:
-        if width >= w or height >= h:
+        if width >= w and height >= h:
             resolution_standard = std
             break
     return resolution, width, height, resolution_standard
+
 
 def get_image_composition(width, height):
     """
@@ -179,7 +180,7 @@ def select_image():
             result_text += f"清晰度: {sharpness:.2f}（无特定单位）\n"
             result_text += f"亮 度: {brightness:.2f}（灰度值范围 0-255）\n"
             result_text += f"对比度: {contrast:.2f}（标准差）\n"
-            result_text += f"分辨率: {resolution}px（{resolution_standard}）\n"
+            result_text += f"分辨率: {resolution}px {resolution_standard}\n"
             result_text += f"宽 度: {width}px\n"
             result_text += f"高 度: {height}px\n"
             result_text += f"构 图: {composition}\n"
@@ -209,7 +210,7 @@ def show_result(text):
 
 # 创建主窗口
 root = tk.Tk()
-root.title("图片质量评估工具")
+root.title("图片质量评估工具[数据仅供参考]")
 # 设置窗口大小并居中
 window_width = 1000
 window_height = 600
@@ -252,7 +253,7 @@ result_frame.grid_propagate(False)
 result_frame.config(width=300, height=200)
 scrollbar = tk.Scrollbar(result_frame)
 scrollbar.pack(side=tk.RIGHT, fill=tk.Y)
-result_text_widget = tk.Text(result_frame, bg='#ffffff', font=("宋体", 13, 'bold'), yscrollcommand=scrollbar.set,
+result_text_widget = tk.Text(result_frame, bg='#ffffff', font=("楷体", 13, 'bold'), yscrollcommand=scrollbar.set,
                              height=12, width=40, spacing2=8)
 result_text_widget.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
 result_text_widget.config(state=tk.DISABLED)
