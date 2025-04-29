@@ -148,7 +148,7 @@ def select_image():
             image_label.image = img_tk
 
             # 显示评估结果
-            result_text = f"图片读取成功......\n"
+            result_text = f"图片读取成功. . . \n"
             result_text += f"清晰度: {sharpness:.2f}\n"
             result_text += f"亮  度: {brightness:.2f}\n"
             result_text += f"对比度: {contrast:.2f}\n"
@@ -181,14 +181,14 @@ root = tk.Tk()
 root.title("图片质量评估工具[仅供参考]")
 # 设置窗口大小并居中
 window_width = 1180
-window_height = 640
+window_height = 690
 screen_width = root.winfo_screenwidth()
 screen_height = root.winfo_screenheight()
 x = (screen_width / 2) - (window_width / 2)
 y = (screen_height / 2) - (window_height / 2)
 root.geometry(f"{window_width}x{window_height}+{int(x)}+{int(y)}")
 # 设置窗口背景颜色
-root.configure(bg='#ffffff')
+root.configure(bg='#e8d7c6')
 # 禁止窗口最大化
 root.resizable(width=False, height=False)
 # 创建选择图片按钮
@@ -200,27 +200,27 @@ label = tk.Label(root, text="评估结果和说明", font=("宋体", 13, 'bold')
 label.grid(row=0, column=2, columnspan=10, pady=(20,10))
 
 # 创建左边框架（图片显示区域）
-left_frame = tk.Frame(root, bg='#ffffff')
+left_frame = tk.Frame(root, bg='#e8d7c6')
 left_frame.grid(row=1, column=0, padx=10, pady=35)
 
 # 创建显示图片的框架，固定大小
-image_frame = tk.Frame(left_frame, bg='#ffffff', width=500, height=500)
+image_frame = tk.Frame(left_frame, bg='#e8d7c6', width=500, height=500)
 image_frame.pack_propagate(0)
 image_frame.pack(pady=20)
-image_label = tk.Label(image_frame, bg='#ffffff')
+image_label = tk.Label(image_frame, bg='#e8d7c6')
 image_label.pack()
 
 # 创建分隔线
-separator = tk.Frame(root, bg='red', width=1, height=window_height - 100)
+separator = tk.Frame(root, bg='#d68910', width=1, height=window_height - 100)
 # 增加分隔线的 padx 值，使其向右移动
 separator.grid(row=1, column=1, sticky="ns")
 
 # 创建右边框架（包含结果显示区域和指标说明区域）
-right_frame = tk.Frame(root, bg='#ffffff')
+right_frame = tk.Frame(root, bg='#e8d7c6')
 right_frame.grid(row=1, column=2, padx=10, pady=10)
 
 # 创建显示评估结果的框架，并添加滚动条
-result_frame = tk.Frame(right_frame, bg='#ffffff')
+result_frame = tk.Frame(right_frame, bg='#e8d7c6')
 result_frame.pack(pady=10)
 result_frame.grid_propagate(False)
 result_frame.config(width=300, height=200)
@@ -233,7 +233,7 @@ result_text_widget.config(state=tk.DISABLED)
 scrollbar.config(command=result_text_widget.yview)
 
 # 创建显示指标说明的框架
-info_frame = tk.Frame(right_frame, bg='#ffffff')
+info_frame = tk.Frame(right_frame, bg='#e8d7c6')
 info_frame.pack(padx=10,pady=10)
 info_text = [
     "参数说明:",
@@ -249,7 +249,7 @@ info_text = [
     "图片质量等级：依清晰度等指标分高、中、低等级。"
 ]
 for line in info_text:
-    info_label = tk.Label(info_frame, text=line, bg='#ffffff', font=("黑体", 11,'bold'), justify=tk.LEFT, anchor="w")
+    info_label = tk.Label(info_frame, text=line, bg='#e8d7c6', font=("微软雅黑", 11), justify=tk.LEFT, anchor="w")
     info_label.pack(anchor="w")
 
 root.mainloop()
